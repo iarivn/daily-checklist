@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>چک‌لیست روزانه</title>
+<meta name="theme-color" content="#FAF5EA">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="چک‌لیست">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%231E3A4F'/%3E%3Cpath d='M55 92l25 25 45-55' stroke='%23FAF5EA' stroke-width='14' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%231E3A4F'/%3E%3Cpath d='M55 92l25 25 45-55' stroke='%23FAF5EA' stroke-width='14' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FAF5EA;
+    --cream-deep:#F1EAD6;
+    --card:#FFFFFF;
+    --carbon:#1E3A4F;
+    --carbon-soft:#33566E;
+    --line:#E7DCC2;
+    --muted:#8B7E63;
+    --danger:#C0564D;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Vazirmatn',system-ui,-apple-system,'Segoe UI',Tahoma,sans-serif;
+    background:var(--cream);
+    color:var(--carbon);
+    min-height:100vh;
+    min-height:100dvh;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .wrap{max-width:520px;margin:0 auto;padding:28px 20px 48px;}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+  .brand{display:flex;align-items:center;gap:10px;}
+  .logo{
+    width:40px;height:40px;border-radius:14px;background:var(--carbon);
+    display:flex;align-items:center;justify-content:center;flex:none;
+  }
+  .logo svg{width:22px;height:22px;}
+  h1{font-size:20px;font-weight:900;margin:0;letter-spacing:-.2px;}
+  .today-btn{
+    font-family:inherit;font-size:13px;font-weight:700;color:var(--carbon);
+    background:transparent;border:1.5px solid var(--carbon);border-radius:999px;
+    padding:7px 16px;cursor:pointer;
+  }
+  .today-btn:active{background:var(--cream-deep);}
+  .date-card{
+    background:var(--carbon);color:var(--cream);
+    border-radius:24px;padding:22px 20px;margin:18px 0;
+    box-shadow:0 10px 28px rgba(30,58,79,.22);
+  }
+  .date-nav{display:flex;align-items:center;justify-content:space-between;}
+  .nav-btn{
+    width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(250,245,234,.35);
+    background:transparent;color:var(--cream);font-size:20px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;flex:none;
+  }
+  .nav-btn:active{background:rgba(250,245,234,.15);}
+  .date-text{text-align:center;flex:1;}
+  .date-weekday{font-size:14px;font-weight:500;opacity:.75;margin-bottom:2px;}
+  .date-main{font-size:24px;font-weight:900;}
+  .progress{margin-top:16px;}
+  .progress-label{display:flex;justify-content:space-between;font-size:13px;font-weight:500;opacity:.85;margin-bottom:8px;}
+  .progress-track{height:10px;border-radius:999px;background:rgba(250,245,234,.22);overflow:hidden;}
+  .progress-fill{height:100%;border-radius:999px;background:var(--cream);width:0%;transition:width .35s ease;}
+  .add-row{display:flex;gap:10px;margin:18px 0 6px;}
+  .add-row input{
+    flex:1;font-family:inherit;font-size:15px;color:var(--carbon);
+    background:var(--card);border:1.5px solid var(--line);border-radius:999px;
+    padding:13px 18px;outline:none;
+  }
+  .add-row input:focus{border-color:var(--carbon);}
+  .add-row input::placeholder{color:var(--muted);}
+  .add-btn{
+    font-family:inherit;font-size:15px;font-weight:800;color:var(--cream);
+    background:var(--carbon);border:none;border-radius:999px;
+    padding:0 26px;cursor:pointer;flex:none;
+  }
+  .add-btn:active{background:var(--carbon-soft);}
+  .list{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:10px;}
+  .task{
+    display:flex;align-items:center;gap:12px;
+    background:var(--card);border:1.5px solid var(--line);border-radius:20px;
+    padding:13px 16px;
+    animation:pop .18s ease;
+  }
+  @keyframes pop{from{transform:scale(.98);opacity:.4;}to{transform:scale(1);opacity:1;}}
+  .check{
+    width:28px;height:28px;border-radius:50%;flex:none;cursor:pointer;
+    border:2px solid var(--carbon);background:transparent;
+    display:flex;align-items:center;justify-content:center;padding:0;
+  }
+  .check svg{width:15px;height:15px;opacity:0;transform:scale(.5);transition:all .18s ease;}
+  .task.done .check{background:var(--carbon);}
+  .task.done .check svg{opacity:1;transform:scale(1);}
+  .task-text{flex:1;font-size:15px;font-weight:500;word-break:break-word;}
+  .task.done .task-text{color:var(--muted);text-decoration:line-through;}
+  .del{
+    flex:none;width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;
+    background:transparent;color:var(--muted);font-size:18px;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .del:active{background:var(--cream-deep);color:var(--danger);}
+  .empty{
+    text-align:center;color:var(--muted);font-size:14px;font-weight:500;
+    padding:38px 20px;border:1.5px dashed var(--line);border-radius:20px;margin-top:14px;
+    background:rgba(255,255,255,.5);
+  }
+  .hint{text-align:center;color:var(--muted);font-size:12px;margin-top:26px;font-weight:400;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l5 5L19 7" stroke="#FAF5EA" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h1>چک‌لیست روزانه</h1>
+    </div>
+    <button class="today-btn" id="todayBtn">امروز</button>
+  </header>
+
+  <section class="date-card">
+    <div class="date-nav">
+      <button class="nav-btn" id="prevBtn" aria-label="روز قبل">‹</button>
+      <div class="date-text">
+        <div class="date-weekday" id="weekday">—</div>
+        <div class="date-main" id="dateMain">—</div>
+      </div>
+      <button class="nav-btn" id="nextBtn" aria-label="روز بعد">›</button>
+    </div>
+    <div class="progress">
+      <div class="progress-label"><span>پیشرفت امروز</span><span id="progressText">۰ از ۰</span></div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+  </section>
+
+  <div class="add-row">
+    <input id="taskInput" type="text" placeholder="یه کار جدید بنویس…" maxlength="140" autocomplete="off">
+    <button class="add-btn" id="addBtn">افزودن</button>
+  </div>
+
+  <ul class="list" id="taskList"></ul>
+  <div class="empty" id="emptyState">هنوز کاری برای این روز ثبت نشده.<br>اولین تسکت رو بالا بنویس.</div>
+
+  <p class="hint">تسک‌ها روی همین دستگاه ذخیره می‌شن.</p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var FA_DIGITS = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+  function faNum(s){ return String(s).replace(/[0-9]/g, function(d){ return FA_DIGITS[+d]; }); }
+  function faToEn(s){ return String(s).replace(/[۰-۹]/g, function(d){ return FA_DIGITS.indexOf(d); }); }
+
+  var STORE_KEY = 'checklist-v1';
+  var store = {};
+  try { store = JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); } catch(e){ store = {}; }
+  function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch(e){} }
+
+  var viewDate = new Date();
+  viewDate.setHours(12,0,0,0);
+
+  var fmtWeekday = new Intl.DateTimeFormat('fa-IR', { weekday:'long' });
+  var fmtDayMonth = new Intl.DateTimeFormat('fa-IR', { day:'numeric', month:'long' });
+  var fmtYear = new Intl.DateTimeFormat('fa-IR', { year:'numeric' });
+  var fmtParts = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { year:'numeric', month:'numeric', day:'numeric' });
+
+  function dateKey(d){
+    var y='', m='', day='';
+    fmtParts.formatToParts(d).forEach(function(p){
+      if(p.type==='year') y = faToEn(p.value);
+      else if(p.type==='month') m = faToEn(p.value);
+      else if(p.type==='day') day = faToEn(p.value);
+    });
+    return y + '-' + m + '-' + day;
+  }
+
+  var listEl = document.getElementById('taskList');
+  var emptyEl = document.getElementById('emptyState');
+  var inputEl = document.getElementById('taskInput');
+
+  function tasks(){ return store[dateKey(viewDate)] || []; }
+  function setTasks(t){ store[dateKey(viewDate)] = t; save(); }
+
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function render(){
+    document.getElementById('weekday').textContent = fmtWeekday.format(viewDate);
+    document.getElementById('dateMain').textContent = fmtDayMonth.format(viewDate) + ' ' + fmtYear.format(viewDate);
+
+    var ts = tasks();
+    var done = ts.filter(function(t){ return t.done; }).length;
+    document.getElementById('progressText').textContent = faNum(done) + ' از ' + faNum(ts.length);
+    document.getElementById('progressFill').style.width = ts.length ? (done/ts.length*100) + '%' : '0%';
+
+    listEl.innerHTML = '';
+    emptyEl.style.display = ts.length ? 'none' : 'block';
+    ts.forEach(function(t){
+      var li = document.createElement('li');
+      li.className = 'task' + (t.done ? ' done' : '');
+      li.innerHTML =
+        '<button class="check" aria-label="انجام شد"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l5 5L19 7" stroke="#FAF5EA" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+        '<span class="task-text">' + esc(t.text) + '</span>' +
+        '<button class="del" aria-label="حذف">×</button>';
+      li.querySelector('.check').addEventListener('click', function(){
+        var all = tasks();
+        var it = all.find(function(x){ return x.id === t.id; });
+        if(it){ it.done = !it.done; setTasks(all); render(); }
+      });
+      li.querySelector('.del').addEventListener('click', function(){
+        setTasks(tasks().filter(function(x){ return x.id !== t.id; }));
+        render();
+      });
+      listEl.appendChild(li);
+    });
+  }
+
+  function addTask(){
+    var v = inputEl.value.trim();
+    if(!v) return;
+    var ts = tasks();
+    ts.push({ id: uid(), text: v, done: false });
+    setTasks(ts);
+    inputEl.value = '';
+    inputEl.focus();
+    render();
+  }
+
+  document.getElementById('addBtn').addEventListener('click', addTask);
+  inputEl.addEventListener('keydown', function(e){ if(e.key === 'Enter') addTask(); });
+  document.getElementById('prevBtn').addEventListener('click', function(){ viewDate.setDate(viewDate.getDate()-1); render(); });
+  document.getElementById('nextBtn').addEventListener('click', function(){ viewDate.setDate(viewDate.getDate()+1); render(); });
+  document.getElementById('todayBtn').addEventListener('click', function(){
+    viewDate = new Date(); viewDate.setHours(12,0,0,0); render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
