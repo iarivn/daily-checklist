@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="چک‌لیست">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%231E3A4F'/%3E%3Cpath d='M55 92l25 25 45-55' stroke='%23FAF5EA' stroke-width='14' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%231E3A4F'/%3E%3Cpath d='M55 92l25 25 45-55' stroke='%23FAF5EA' stroke-width='14' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -68,7 +68,16 @@
   .progress{margin-top:16px;}
   .progress-label{display:flex;justify-content:space-between;font-size:13px;font-weight:500;opacity:.85;margin-bottom:8px;}
   .progress-track{height:10px;border-radius:999px;background:rgba(250,245,234,.22);overflow:hidden;}
-  .progress-fill{height:100%;border-radius:999px;background:var(--cream);width:0%;transition:width .35s ease;}
+  .progress-fill{height:100%;border-radius:999px;background:var(--cream);width:0%;transition:width .5s cubic-bezier(.32,.72,0,1);}
+  /* day-change slide (iOS-style page transition) */
+  @keyframes outL{to{transform:translateX(-36px);opacity:0;}}
+  @keyframes outR{to{transform:translateX(36px);opacity:0;}}
+  @keyframes inFromR{from{transform:translateX(36px);opacity:0;}to{transform:none;opacity:1;}}
+  @keyframes inFromL{from{transform:translateX(-36px);opacity:0;}to{transform:none;opacity:1;}}
+  .pg-next-out #content>*{animation:outL .18s ease-in forwards;}
+  .pg-prev-out #content>*{animation:outR .18s ease-in forwards;}
+  .pg-next-in #content>*{animation:inFromR .36s cubic-bezier(.32,.72,0,1);}
+  .pg-prev-in #content>*{animation:inFromL .36s cubic-bezier(.32,.72,0,1);}
   .add-row{display:flex;gap:10px;margin:18px 0 6px;}
   .add-row input{
     flex:1;font-family:inherit;font-size:15px;color:var(--carbon);
@@ -81,22 +90,28 @@
     font-family:inherit;font-size:15px;font-weight:800;color:var(--cream);
     background:var(--carbon);border:none;border-radius:999px;
     padding:0 26px;cursor:pointer;flex:none;
+    transition:transform .15s ease,background .15s ease;
   }
-  .add-btn:active{background:var(--carbon-soft);}
+  .add-btn:active{background:var(--carbon-soft);transform:scale(.95);}
+  .today-btn,.nav-btn{transition:transform .15s ease;}
+  .today-btn:active,.nav-btn:active{transform:scale(.9);}
   .list{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:10px;}
   .task{
     display:flex;align-items:center;gap:12px;
     background:var(--card);border:1.5px solid var(--line);border-radius:20px;
     padding:13px 16px;
-    animation:pop .18s ease;
   }
-  @keyframes pop{from{transform:scale(.98);opacity:.4;}to{transform:scale(1);opacity:1;}}
+  .task.enter{animation:taskIn .45s cubic-bezier(.32,.72,0,1);}
+  @keyframes taskIn{from{opacity:0;transform:translateY(-14px) scale(.97);}to{opacity:1;transform:none;}}
+  .task.leaving{transition:opacity .22s ease,transform .22s ease !important;opacity:0 !important;transform:translateX(-40px) scale(.96) !important;}
   .check{
     width:28px;height:28px;border-radius:50%;flex:none;cursor:pointer;
     border:2px solid var(--carbon);background:transparent;
     display:flex;align-items:center;justify-content:center;padding:0;
   }
   .check svg{width:15px;height:15px;opacity:0;transform:scale(.5);transition:all .18s ease;}
+  .check.pop{animation:checkPop .38s cubic-bezier(.32,.72,0,1);}
+  @keyframes checkPop{0%{transform:scale(.55);}55%{transform:scale(1.18);}100%{transform:scale(1);}}
   .task.done .check{background:var(--carbon);}
   .task.done .check svg{opacity:1;transform:scale(1);}
   .task-text{flex:1;font-size:15px;font-weight:500;word-break:break-word;}
@@ -127,6 +142,7 @@
     <button class="today-btn" id="todayBtn">امروز</button>
   </header>
 
+  <div id="content">
   <section class="date-card">
     <div class="date-nav">
       <button class="nav-btn" id="prevBtn" aria-label="روز قبل">‹</button>
@@ -149,6 +165,7 @@
 
   <ul class="list" id="taskList"></ul>
   <div class="empty" id="emptyState">هنوز کاری برای این روز ثبت نشده.<br>اولین تسکت رو بالا بنویس.</div>
+  </div>
 
   <p class="hint">تسک‌ها روی همین دستگاه ذخیره می‌شن.</p>
 </div>
@@ -186,6 +203,7 @@
   var listEl = document.getElementById('taskList');
   var emptyEl = document.getElementById('emptyState');
   var inputEl = document.getElementById('taskInput');
+  var pendingEnterId = null;
 
   function tasks(){ return store[dateKey(viewDate)] || []; }
   function setTasks(t){ store[dateKey(viewDate)] = t; save(); }
@@ -193,20 +211,25 @@
   function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
   function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-  function render(){
+  function renderDate(){
     document.getElementById('weekday').textContent = fmtWeekday.format(viewDate);
     document.getElementById('dateMain').textContent = fmtDayMonth.format(viewDate) + ' ' + fmtYear.format(viewDate);
+  }
 
+  function renderProgress(){
     var ts = tasks();
     var done = ts.filter(function(t){ return t.done; }).length;
     document.getElementById('progressText').textContent = faNum(done) + ' از ' + faNum(ts.length);
     document.getElementById('progressFill').style.width = ts.length ? (done/ts.length*100) + '%' : '0%';
+  }
 
+  function renderList(){
+    var ts = tasks();
     listEl.innerHTML = '';
     emptyEl.style.display = ts.length ? 'none' : 'block';
     ts.forEach(function(t){
       var li = document.createElement('li');
-      li.className = 'task' + (t.done ? ' done' : '');
+      li.className = 'task' + (t.done ? ' done' : '') + (t.id === pendingEnterId ? ' enter' : '');
       li.innerHTML =
         '<button class="check" aria-label="انجام شد"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l5 5L19 7" stroke="#FAF5EA" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
         '<span class="task-text">' + esc(t.text) + '</span>' +
@@ -214,31 +237,58 @@
       li.querySelector('.check').addEventListener('click', function(){
         var all = tasks();
         var it = all.find(function(x){ return x.id === t.id; });
-        if(it){ it.done = !it.done; setTasks(all); render(); }
+        if(!it) return;
+        it.done = !it.done; setTasks(all);
+        li.classList.toggle('done', it.done);
+        var cb = li.querySelector('.check');
+        cb.classList.remove('pop'); void cb.offsetWidth; cb.classList.add('pop');
+        renderProgress();
       });
       li.querySelector('.del').addEventListener('click', function(){
-        setTasks(tasks().filter(function(x){ return x.id !== t.id; }));
-        render();
+        li.classList.add('leaving');
+        setTimeout(function(){
+          setTasks(tasks().filter(function(x){ return x.id !== t.id; }));
+          renderList(); renderProgress();
+        }, 230);
       });
       listEl.appendChild(li);
     });
+    pendingEnterId = null;
   }
+
+  function render(){ renderDate(); renderProgress(); renderList(); }
 
   function addTask(){
     var v = inputEl.value.trim();
     if(!v) return;
     var ts = tasks();
-    ts.push({ id: uid(), text: v, done: false });
+    var nt = { id: uid(), text: v, done: false };
+    ts.push(nt);
     setTasks(ts);
+    pendingEnterId = nt.id;
     inputEl.value = '';
     inputEl.focus();
-    render();
+    renderList(); renderProgress();
+  }
+
+  function goDay(delta){
+    var outCls = delta > 0 ? 'pg-next-out' : 'pg-prev-out';
+    var inCls = delta > 0 ? 'pg-next-in' : 'pg-prev-in';
+    var wrap = document.querySelector('.wrap');
+    wrap.classList.add(outCls);
+    setTimeout(function(){
+      viewDate.setDate(viewDate.getDate() + delta);
+      renderDate(); renderList(); renderProgress();
+      wrap.classList.remove(outCls);
+      wrap.classList.add(inCls);
+      setTimeout(function(){ wrap.classList.remove(inCls); }, 420);
+    }, 190);
   }
 
   document.getElementById('addBtn').addEventListener('click', addTask);
   inputEl.addEventListener('keydown', function(e){ if(e.key === 'Enter') addTask(); });
-  document.getElementById('prevBtn').addEventListener('click', function(){ viewDate.setDate(viewDate.getDate()-1); render(); });
-  document.getElementById('nextBtn').addEventListener('click', function(){ viewDate.setDate(viewDate.getDate()+1); render(); });
+  document.getElementById('prevBtn').addEventListener('click', function(){ goDay(-1); });
+  document.getElementById('nextBtn').addEventListener('click', function(){ goDay(1); });
   document.getElementById('todayBtn').addEventListener('click', function(){
     viewDate = new Date(); viewDate.setHours(12,0,0,0); render();
   });
