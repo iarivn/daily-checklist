@@ -139,10 +139,24 @@
     display:flex;align-items:center;gap:12px;
     background:var(--card);border:1.5px solid var(--line);border-radius:20px;
     padding:13px 16px;
+    position:relative;
   }
   .task.enter{animation:taskIn .65s cubic-bezier(.32,.72,0,1);}
   @keyframes taskIn{from{opacity:0;transform:translateY(-14px) scale(.97);}to{opacity:1;transform:none;}}
   .task.leaving{transition:opacity .35s ease,transform .35s ease !important;opacity:0 !important;transform:translateX(-40px) scale(.96) !important;}
+  /* cobweb for tasks untouched for 12h */
+  .task.cobweb{border-color:#e0d5bc;}
+  .cobweb-svg{position:absolute;top:-12px;left:-12px;width:88px;height:88px;pointer-events:none;z-index:3;}
+  .cobweb-svg path{stroke:#a79d86;stroke-width:1.4;fill:none;opacity:.9;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;animation:webDraw 1s ease forwards;}
+  .cobweb-svg path:nth-child(n+6){animation-delay:.15s;}
+  .cobweb-svg path:nth-child(n+10){animation-delay:.3s;}
+  .cobweb-svg path:nth-child(n+14){animation-delay:.45s;}
+  .cobweb-svg path:nth-child(n+18){animation-delay:.6s;}
+  .cobweb-svg path:nth-child(n+22){animation-delay:.75s;}
+  @keyframes webDraw{to{stroke-dashoffset:0;}}
+  .cobweb-svg.falling{animation:webFall .7s ease-in forwards;}
+  .cobweb-svg.falling path{animation:none;stroke-dashoffset:0;}
+  @keyframes webFall{0%{transform:translateY(0) rotate(0deg);opacity:1;}100%{transform:translateY(54px) rotate(30deg);opacity:0;}}
   .check{
     width:28px;height:28px;border-radius:50%;flex:none;cursor:pointer;
     border:2px solid var(--carbon);background:transparent;
@@ -245,6 +259,19 @@
   try { store = JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); } catch(e){ store = {}; }
   function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch(e){} }
 
+  var STALE_MS = 12*60*60*1000;
+  (function(){
+    var nowTs = Date.now(), dirty = false;
+    Object.keys(store).forEach(function(k){
+      (store[k]||[]).forEach(function(t){ if(!t.createdAt){ t.createdAt = nowTs; dirty = true; } });
+    });
+    if(dirty) save();
+  })();
+
+  function isStale(t){ return !t.done && t.createdAt && (Date.now() - t.createdAt >= STALE_MS); }
+  var COBWEB_PATHS = '<path pathLength="1" d="M0 0 L72.0 0.0"/><path pathLength="1" d="M0 0 L66.5 27.6"/><path pathLength="1" d="M0 0 L50.9 50.9"/><path pathLength="1" d="M0 0 L27.6 66.5"/><path pathLength="1" d="M0 0 L0.0 72.0"/><path pathLength="1" d="M15.0 0.0 Q12.1 2.4 13.9 5.7"/><path pathLength="1" d="M13.9 5.7 Q10.2 6.8 10.6 10.6"/><path pathLength="1" d="M10.6 10.6 Q6.8 10.2 5.7 13.9"/><path pathLength="1" d="M5.7 13.9 Q2.4 12.1 0.0 15.0"/><path pathLength="1" d="M26.0 0.0 Q20.9 4.2 24.0 9.9"/><path pathLength="1" d="M24.0 9.9 Q17.7 11.8 18.4 18.4"/><path pathLength="1" d="M18.4 18.4 Q11.8 17.7 9.9 24.0"/><path pathLength="1" d="M9.9 24.0 Q4.2 20.9 0.0 26.0"/><path pathLength="1" d="M37.0 0.0 Q29.8 5.9 34.2 14.2"/><path pathLength="1" d="M34.2 14.2 Q25.2 16.9 26.2 26.2"/><path pathLength="1" d="M26.2 26.2 Q16.9 25.2 14.2 34.2"/><path pathLength="1" d="M14.2 34.2 Q5.9 29.8 0.0 37.0"/><path pathLength="1" d="M48.0 0.0 Q38.6 7.7 44.3 18.4"/><path pathLength="1" d="M44.3 18.4 Q32.7 21.9 33.9 33.9"/><path pathLength="1" d="M33.9 33.9 Q21.9 32.7 18.4 44.3"/><path pathLength="1" d="M18.4 44.3 Q7.7 38.6 0.0 48.0"/><path pathLength="1" d="M59.0 0.0 Q47.5 9.4 54.5 22.6"/><path pathLength="1" d="M54.5 22.6 Q40.2 26.9 41.7 41.7"/><path pathLength="1" d="M41.7 41.7 Q26.9 40.2 22.6 54.5"/><path pathLength="1" d="M22.6 54.5 Q9.4 47.5 0.0 59.0"/>';
+  function webSVG(){ return '<svg class="cobweb-svg" viewBox="-4 -4 84 84" aria-hidden="true"><g>' + COBWEB_PATHS + '</g></svg>'; }
+
   var viewDate = new Date();
   viewDate.setHours(12,0,0,0);
 
@@ -293,8 +320,10 @@
     emptyEl.style.display = ts.length ? 'none' : 'block';
     ts.forEach(function(t){
       var li = document.createElement('li');
-      li.className = 'task' + (t.done ? ' done' : '') + (t.id === pendingEnterId ? ' enter' : '');
-      li.innerHTML =
+      var stale = isStale(t);
+      li.className = 'task' + (t.done ? ' done' : '') + (t.id === pendingEnterId ? ' enter' : '') + (stale ? ' cobweb' : '');
+      li.setAttribute('data-tid', t.id);
+      li.innerHTML = (stale ? webSVG() : '') +
         '<button class="check" aria-label="انجام شد"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l5 5L19 7" stroke="#FAF5EA" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
         '<span class="task-text">' + esc(t.text) + '</span>' +
         '<button class="del" aria-label="حذف">×</button>';
@@ -304,6 +333,16 @@
         if(!it) return;
         it.done = !it.done; setTasks(all);
         li.classList.toggle('done', it.done);
+        if(it.done){
+          var web = li.querySelector('.cobweb-svg');
+          if(web){
+            web.classList.add('falling');
+            setTimeout(function(){ web.remove(); li.classList.remove('cobweb'); }, 720);
+          }
+        } else if(isStale(it) && !li.querySelector('.cobweb-svg')){
+          li.classList.add('cobweb');
+          li.insertAdjacentHTML('afterbegin', webSVG());
+        }
         var cb = li.querySelector('.check');
         cb.classList.remove('pop'); void cb.offsetWidth; cb.classList.add('pop');
         renderProgress();
@@ -326,7 +365,7 @@
     var v = inputEl.value.trim();
     if(!v) return;
     var ts = tasks();
-    var nt = { id: uid(), text: v, done: false };
+    var nt = { id: uid(), text: v, done: false, createdAt: Date.now() };
     ts.push(nt);
     setTasks(ts);
     pendingEnterId = nt.id;
@@ -418,6 +457,8 @@
     setTimeout(function(){ reportView.hidden = true; reportView.classList.remove('view-out-r'); }, 300);
     setTimeout(function(){ mainView.classList.remove('view-in-l'); }, 620);
   });
+
+  setInterval(function(){ renderList(); }, 60000);
 
   render();
 })();
